@@ -18,7 +18,7 @@ import socket
 
 import mock
 
-from nova.compute import task_states
+from nova.compute import power_state, task_states
 from nova import context
 from nova import exception
 from nova.openstack.common import jsonutils
@@ -277,6 +277,30 @@ class DockerDriverTestCase(_VirtDriverTestCase, test.TestCase):
                         return_value={}):
             instances = self.connection.list_instances()
             self.assertFalse(instances)
+
+    def test_get_info(self):
+        flavor = utils.get_test_flavor(options={
+            'memory_mb': 64,
+            'vcpus': 2,
+        })
+        instance, network_info = self._get_running_instance(flavor=flavor)
+
+        info = self.connection.get_info(instance)
+
+        expected_info = {
+            'max_mem': 64 * 1024 * 1024,
+            'mem': 64 * 1024 * 1024,
+            'num_cpu': 2,
+            'cpu_time': 0,
+            'state': power_state.RUNNING,
+        }
+        self.assertEqual(expected_info, info)
+
+    def test_get_info_not_found(self):
+        instance = utils.get_test_instance()
+
+        self.assertRaises(exception.InstanceNotFound,
+                          self.connection.get_info, instance)
 
     def test_find_container_pid(self):
         driver = novadocker.virt.docker.driver.DockerDriver(None)
