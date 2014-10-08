@@ -174,8 +174,7 @@ class DockerDriverTestCase(_VirtDriverTestCase, test.TestCase):
             instance_href['uuid']))
 
     def _assert_cpu_shares(self, instance_href, vcpus=4):
-        container_id = self.connection._find_container_by_name(
-            instance_href['name']).get('id')
+        container_id = self.connection._find_container(instance_href).get('id')
         container_info = self.connection.docker.inspect_container(container_id)
         self.assertEqual(vcpus * 1024, container_info['Config']['CpuShares'])
 
@@ -198,9 +197,9 @@ class DockerDriverTestCase(_VirtDriverTestCase, test.TestCase):
     @mock.patch.object(novadocker.virt.docker.driver.DockerDriver,
                        'cleanup')
     @mock.patch.object(novadocker.virt.docker.driver.DockerDriver,
-                       '_find_container_by_name',
+                       '_find_container',
                        return_value={'id': 'fake_id'})
-    def test_destroy_container(self, byname_mock, cleanup_mock):
+    def test_destroy_container(self, find_mock, cleanup_mock):
         instance = utils.get_test_instance()
         self.connection.destroy(self.context, instance, 'fake_networkinfo')
         cleanup_mock.assert_called_with(self.context, instance,
@@ -210,12 +209,12 @@ class DockerDriverTestCase(_VirtDriverTestCase, test.TestCase):
     @mock.patch.object(novadocker.virt.docker.driver.DockerDriver,
                        'unplug_vifs')
     @mock.patch.object(novadocker.virt.docker.driver.DockerDriver,
-                       '_find_container_by_name',
+                       '_find_container',
                        return_value={'id': 'fake_id'})
-    def test_cleanup_container(self, byname_mock, unplug_mock, teardown_mock):
+    def test_cleanup_container(self, find_mock, unplug_mock, teardown_mock):
         instance = utils.get_test_instance()
         self.connection.cleanup(self.context, instance, 'fake_networkinfo')
-        byname_mock.assert_called_with(instance['name'])
+        find_mock.assert_called_with(instance)
         teardown_mock.assert_called_with('fake_id')
 
     def test_soft_delete_restore_container(self):
@@ -226,8 +225,7 @@ class DockerDriverTestCase(_VirtDriverTestCase, test.TestCase):
 
         self.connection.spawn(self.context, instance_href, image_info,
                               'fake_files', 'fake_password')
-        container_id = self.connection._find_container_by_name(
-            instance_href['name']).get('id')
+        container_id = self.connection._find_container(instance_href).get('id')
 
         self.connection.soft_delete(instance_href)
         info = self.connection.docker.inspect_container(container_id)
@@ -315,9 +313,9 @@ class DockerDriverTestCase(_VirtDriverTestCase, test.TestCase):
     @mock.patch.object(novadocker.tests.virt.docker.mock_client.MockClient,
                        'get_image')
     @mock.patch.object(novadocker.virt.docker.driver.DockerDriver,
-                       '_find_container_by_name',
+                       '_find_container',
                        return_value={'id': 'fake_id'})
-    def test_snapshot(self, byname_mock, getimage_mock, loadrepo_mock):
+    def test_snapshot(self, find_mock, getimage_mock, loadrepo_mock):
         # Use mix-case to test that mixed-case image names succeed.
         snapshot_name = 'tEsT-SnAp'
 

@@ -109,7 +109,7 @@ class DockerDriver(driver.ComputeDriver):
         """Plug VIFs into container."""
         if not network_info:
             return
-        container_id = self._find_container_by_name(instance['name']).get('id')
+        container_id = self._find_container(instance).get('id')
         if not container_id:
             return
         netns_path = '/var/run/netns'
@@ -133,12 +133,6 @@ class DockerDriver(driver.ComputeDriver):
         """Unplug VIFs from networks."""
         for vif in network_info:
             self.vif_driver.unplug(instance, vif)
-
-    def _find_container_by_name(self, name):
-        for info in self.list_instances(inspect=True):
-            if info['Config'].get('Hostname') == name:
-                return info
-        return {}
 
     def _find_container(self, instance):
         name = self._instance_to_container_name(instance)
@@ -262,7 +256,7 @@ class DockerDriver(driver.ComputeDriver):
         return self.docker.inspect_image(image_meta['name'])
 
     def _start_container(self, instance, network_info=None):
-        container_id = self._find_container_by_name(instance['name']).get('id')
+        container_id = self._find_container(instance).get('id')
         if not container_id:
             return
 
@@ -307,14 +301,14 @@ class DockerDriver(driver.ComputeDriver):
         self._start_container(instance, network_info)
 
     def restore(self, instance):
-        container_id = self._find_container_by_name(instance['name']).get('id')
+        container_id = self._find_container(instance).get('id')
         if not container_id:
             return
 
         self._start_container(instance)
 
     def soft_delete(self, instance):
-        container_id = self._find_container_by_name(instance['name']).get('id')
+        container_id = self._find_container(instance).get('id')
         if not container_id:
             return
         self.docker.stop_container(container_id)
@@ -328,7 +322,7 @@ class DockerDriver(driver.ComputeDriver):
     def cleanup(self, context, instance, network_info, block_device_info=None,
                 destroy_disks=True):
         """Cleanup after instance being destroyed by Hypervisor."""
-        container_id = self._find_container_by_name(instance['name']).get('id')
+        container_id = self._find_container(instance).get('id')
         if not container_id:
             return
         self.docker.destroy_container(container_id)
@@ -337,7 +331,7 @@ class DockerDriver(driver.ComputeDriver):
 
     def reboot(self, context, instance, network_info, reboot_type,
                block_device_info=None, bad_volumes_callback=None):
-        container_id = self._find_container_by_name(instance['name']).get('id')
+        container_id = self._find_container(instance).get('id')
         if not container_id:
             return
         if not self.docker.stop_container(container_id):
@@ -362,7 +356,7 @@ class DockerDriver(driver.ComputeDriver):
             return
 
     def power_on(self, context, instance, network_info, block_device_info):
-        container_id = self._find_container_by_name(instance['name']).get('id')
+        container_id = self._find_container(instance).get('id')
         if not container_id:
             return
         self.docker.start_container(container_id)
@@ -377,7 +371,7 @@ class DockerDriver(driver.ComputeDriver):
                                                   instance_id=instance['name'])
 
     def power_off(self, instance, timeout=0, retry_interval=0):
-        container_id = self._find_container_by_name(instance['name']).get('id')
+        container_id = self._find_container(instance).get('id')
         if not container_id:
             return
         self.docker.stop_container(container_id, timeout)
@@ -388,7 +382,7 @@ class DockerDriver(driver.ComputeDriver):
         :param instance: nova.objects.instance.Instance
         """
         try:
-            cont_id = self._find_container_by_name(instance['name']).get('id')
+            cont_id = self._find_container(instance).get('id')
             if not self.docker.pause_container(cont_id):
                 raise exception.NovaException
         except Exception as e:
@@ -402,7 +396,7 @@ class DockerDriver(driver.ComputeDriver):
         :param instance: nova.objects.instance.Instance
         """
         try:
-            cont_id = self._find_container_by_name(instance['name']).get('id')
+            cont_id = self._find_container(instance).get('id')
             if not self.docker.unpause_container(cont_id):
                 raise exception.NovaException
         except Exception as e:
@@ -411,13 +405,13 @@ class DockerDriver(driver.ComputeDriver):
                                           instance_id=instance['name'])
 
     def get_console_output(self, context, instance):
-        container_id = self._find_container_by_name(instance.name).get('id')
+        container_id = self._find_container(instance).get('id')
         if not container_id:
             return
         return self.docker.get_container_logs(container_id)
 
     def snapshot(self, context, instance, image_href, update_task_state):
-        container_id = self._find_container_by_name(instance['name']).get('id')
+        container_id = self._find_container(instance).get('id')
         if not container_id:
             raise exception.InstanceNotRunning(instance_id=instance['uuid'])
 

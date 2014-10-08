@@ -125,12 +125,12 @@ class MockClient(object):
                 if container['name'] == container_id:
                     break
             else:
-                return
+                return {}
         info = {
             'Args': [],
             'Config': container['config'],
             'Created': str(timeutils.utcnow()),
-            'ID': container_id,
+            'Id': container['id'],
             'Image': self._fake_id(),
             'NetworkSettings': {
                 'Bridge': '',
