@@ -18,7 +18,8 @@ import socket
 
 import mock
 
-from nova.compute import power_state, task_states
+from nova.compute import power_state
+from nova.compute import task_states
 from nova import context
 from nova import exception
 from nova.openstack.common import jsonutils
