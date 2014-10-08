@@ -140,8 +140,12 @@ class DockerDriver(driver.ComputeDriver):
                 return info
         return {}
 
+    def _find_container(self, instance):
+        name = self._instance_to_container_name(instance)
+        return self.docker.inspect_container(name)
+
     def get_info(self, instance):
-        container = self._find_container_by_name(instance['name'])
+        container = self._find_container(instance)
         if not container:
             raise exception.InstanceNotFound(instance_id=instance['name'])
         running = container['State'].get('Running')
@@ -473,8 +477,11 @@ class DockerDriver(driver.ComputeDriver):
         flavor = flavors.extract_flavor(instance)
         return int(flavor['vcpus']) * 1024
 
+    def _instance_to_container_name(self, instance):
+        return 'nova-' + instance.get('uuid', '')
+
     def _create_container(self, instance, args):
-        name = "nova-" + instance['uuid']
+        name = self._instance_to_container_name(instance)
         return self.docker.create_container(args, name)
 
     def get_host_uptime(self, host):
