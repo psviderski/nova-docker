@@ -152,6 +152,9 @@ class DockerHTTPClient(object):
             'Dns': None,
             'Image': None,
             'Volumes': {},
+            'HostConfig': {
+                'NetworkMode': 'none',
+            },
         }
         data.update(args)
         resp = self.make_request(

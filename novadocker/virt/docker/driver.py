@@ -279,7 +279,6 @@ class DockerDriver(driver.ComputeDriver):
             'Image': image_name,
             'Memory': self._get_memory_limit_bytes(instance),
             'CpuShares': self._get_cpu_shares(instance),
-            'NetworkDisabled': True,
         }
 
         image = self.docker.inspect_image(image_name)
